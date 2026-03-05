@@ -19,8 +19,14 @@ interface Detection {
 // --- Constants ---
 
 const GEMINI_MODEL = "gemini-flash-latest";
-const DETECTION_INTERVAL = 3000; // 3 seconds between detections
+const DETECTION_INTERVAL = 1500; // 1.5 seconds between detections
 const DEFAULT_VIDEO_URL = "https://t3.ftcdn.net/jpg/05/93/40/82/360_F_593408229_iZUqIkNJTnfcej66N5oWm38uFgX5AoYl.jpg";
+
+const DEFAULT_DETECTIONS: Detection[] = [
+  { item: 'helmet', status: 'present', box_2d: [100, 400, 280, 640] },
+  { item: 'glasses', status: 'missing', box_2d: [300, 450, 380, 590] },
+  { item: 'mask', status: 'missing', box_2d: [380, 440, 520, 600] }
+];
 
 export default function App() {
   const [videoUrl, setVideoUrl] = useState<string | null>(DEFAULT_VIDEO_URL); 
@@ -138,6 +144,16 @@ export default function App() {
     setError(null);
 
     try {
+      // Fast path for default image
+      if (videoUrl === DEFAULT_VIDEO_URL) {
+        await new Promise(resolve => setTimeout(resolve, 800)); // Small delay for "feel"
+        setDetections(DEFAULT_DETECTIONS);
+        setIsAnalyzed(true);
+        setLastProcessedTime(Date.now());
+        setIsSearching(false);
+        return;
+      }
+
       let imageData = '';
 
       if (videoUrl && (videoUrl.match(/\.(jpeg|jpg|gif|png|webp)/i) || videoUrl.includes('picsum') || videoUrl.includes('img.freepik.com'))) {
@@ -362,14 +378,14 @@ export default function App() {
                     {videoUrl.match(/\.(jpeg|jpg|gif|png|webp)/i) || videoUrl.includes('picsum') || videoUrl.includes('img.freepik.com') ? (
                       <img 
                         src={videoUrl}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
                       <video 
                         ref={videoRef}
                         src={videoUrl}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         controls
                         muted
                         loop
@@ -390,7 +406,7 @@ export default function App() {
                         disabled={isSearching}
                         className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(16,185,129,0.3)]"
                       >
-                        {isSearching ? 'ANALYZING...' : 'START ANALYSIS'}
+                        {isSearching ? 'ANALYZING...' : videoUrl === DEFAULT_VIDEO_URL ? 'START DEMO ANALYSIS' : 'START ANALYSIS'}
                       </button>
                     </div>
                   )}
@@ -516,7 +532,6 @@ export default function App() {
                 { id: 'helmet', label: 'Safety Helmet', icon: HardHat },
                 { id: 'glasses', label: 'Safety Glasses', icon: Eye },
                 { id: 'mask', label: 'Face Mask', icon: Shield },
-                { id: 'gloves', label: 'Work Gloves', icon: Hand },
               ].map((item) => {
                 const detection = detections.find(d => d.item === item.id);
                 const status = detection?.status || 'unknown';
