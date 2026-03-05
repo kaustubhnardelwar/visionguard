@@ -1,0 +1,5 @@
+{
+  "name": "SafeGuard AI: PPE Detection",
+  "description": "Real-time AI-powered PPE detection for industrial safety. Monitors helmets, glasses, and masks in video streams using Gemini Vision.",
+  "requestFramePermissions": []
+}
